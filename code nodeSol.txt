@@ -1,0 +1,62 @@
+#include <DHT.h>
+#define DHT11PIN 0
+#define SolPin 4
+
+
+#include <SPI.h>
+#include <LoRa.h>
+
+#define ss 15
+#define rst 16
+#define dio0 2
+
+int pos;
+String msg1,msg2,msg3;
+
+DHT dht(DHT11PIN, DHT11);
+void setup()
+{
+  pinMode(SolPin,INPUT);
+  Serial.begin(115200);
+/* Start the DHT11 Sensor */
+  dht.begin();
+
+
+  while (!Serial);
+  Serial.println("LoRa Sender");
+  LoRa.setPins(ss, rst, dio0);
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+
+
+}
+
+void loop()
+{
+  float humi = dht.readHumidity();
+  float temp = dht.readTemperature();
+  float solVal= analogRead(SolPin);
+  Serial.print("Temperature: ");
+  Serial.print(temp);
+  Serial.print("ºC ");
+  Serial.print("Humidity: ");
+  Serial.println(humi);
+  Serial.print(" Sol Humidity: ");
+  Serial.println(solVal);
+  delay(1000);
+
+  msg1 = String(temp) +"/";
+  msg2 = String(humi) +"/"; 
+  msg3 = String(solVal) +"/"; 
+
+  Serial.print("Sending packet: ");
+  // send packet to Lora
+  LoRa.beginPacket();
+  LoRa.print(msg1); 
+  LoRa.print(msg2); 
+  LoRa.print(msg3); 
+  LoRa.endPacket(); 
+  delay(3000);
+}
